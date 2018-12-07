@@ -41,15 +41,15 @@ class History:
         assert self.is_terminal()
         play_seqs = np.array(self.get_play_sequences())
         player_wins = 2.0*(self.traj[player] > self.traj[1-player]) - 1.0  # valued in -1, 1
-        if (play_seqs == [0, 0]).all():
+        if np.array_equal(play_seqs, [0, 0]):
             util = 1.0*player_wins
-        elif (play_seqs == [0, 1, 0]).all():
+        elif np.array_equal(play_seqs, [0, 1, 0]):
             util = 2.0*(player == 1) - 1
-        elif (play_seqs == [0, 1, 1]).all():
+        elif np.array_equal(play_seqs, [0, 1, 1]):
             util = 2.0*player_wins
-        elif (play_seqs == [1, 0]).all():
+        elif np.array_equal(play_seqs, [1, 0]):
             util = 2.0*(player == 0) - 1
-        elif (play_seqs == [1, 1]).all():
+        elif np.array_equal(play_seqs, [1, 1]):
             util = 2.0*player_wins
         else:
             raise ValueError('Trajectory does not appear to be terminated: {}'.format(play_seqs))
