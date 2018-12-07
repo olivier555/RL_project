@@ -148,3 +148,9 @@ def crm(history: History, player, pis):
         strategy[info_set_index, :] = strategy_update(regrets_info_sets[info_set_index, :])
     return value
 
+def Solve(nb_iter):
+    for _ in range(nb_iter):
+        for p in range(2):
+            h = History()
+            crm(h, p, [1, 1])
+
