@@ -47,6 +47,7 @@ class Node:
         self.value_action.fill(0)
         self.value = 0
 
+
 def strategy_update(regrets):
     new_strat = np.maximum(regrets, 0.0)
     if np.max(new_strat) >  1e-8:
@@ -55,6 +56,7 @@ def strategy_update(regrets):
     else:
         n_actions = len(new_strat)
         return 1.0/n_actions*np.ones(n_actions)
+
 
 def fsicrm(list_nodes, nb_iter):
     for _ in range(nb_iter):
@@ -105,11 +107,11 @@ def kuhn_poker(node, line, history):
         node = Node(is_chance=True, line=line)
         l = list(range(3))
         l.remove(history[0])
-        children = [kuhn_poker(node, line=1, history=history + [i]) for i in l]
+        children = [kuhn_poker(node, line=2, history=history + [i]) for i in l]
         node.children = children
         return node
     else:
-        if len(history) <= 2:
+        if len(history) <= 3:
             is_terminal = False
         else:
             is_terminal = not (history[-2] == 0 and history[-1] == 1)
@@ -118,7 +120,7 @@ def kuhn_poker(node, line, history):
             children = [kuhn_poker(node, line=line+1, history=history + [i]) for i in range(2)]
             node.children = children
         else:
-            assert(len(history)>=4)
+            assert(len(history) >= 4, history)
             if history[-1] == 0 and history[-2] == 0:
                 utility = 1 if history[1] > history[0] else -1
             elif history[-1] == 0 and history[-2] == 1:
@@ -130,4 +132,19 @@ def kuhn_poker(node, line, history):
             node.utility = utility
         return node
 
-kuhn_poker(None, 0, None)          
+
+def create_kuhn_list(node):
+    if node.is_terminal:
+        return [node]
+    else:
+        l = [node]
+        for c in node.children:
+            l += create_kuhn_list(c)
+        return l
+
+
+if __name__ == '__main__':
+
+    initial_node = kuhn_poker(None, 0, None)
+    kuhn_list = create_kuhn_list(initial_node)
+    kuhn_list = sorted(kuhn_list, key=lambda x: x.line)
