@@ -6,7 +6,6 @@ Created on Wed Dec 19 09:42:06 2018
 """
 
 import numpy as np
-from copy import deepcopy
 
 from game import Game, KuhnGame
 
@@ -28,6 +27,9 @@ def strategy_update(regrets):
 def fsicrm(my_game: Game, nb_iter):
     # TODO: COMPRENDRE POURQUOI EN INDICES 11 ET 12 ON CALCULE TOUJOURS LES MEMES VALEURS
     # TODO: Pour cela, regarder fonctionnement et mise a jour de cette fonction.
+
+    mean_node_regrets = []
+
     for _ in range(nb_iter):
         history = {}
         for n in my_game.info_sets:
@@ -70,10 +72,41 @@ def fsicrm(my_game: Game, nb_iter):
                     n.value = n.chance_child.value
                 else:
                     n.value = n.utility
+
+
+        #TODO: Find something better than averaging over nodes
+        # Expected regrets computation:
+        expected_regrets_0 = []
+        expected_regrets_1 = []
+        for n in my_game.info_sets:
+            if n.is_decision:
+                if n.player == 0:
+                    expected_regrets_0.append((n.regrets*n.sigma).mean())
+                else:
+                    expected_regrets_1.append((n.regrets * n.sigma).mean())
+        mean_0 = np.mean(expected_regrets_0)
+        mean_1 = np.mean(expected_regrets_1)
+
+        mean_node_regrets.append([mean_0, mean_1])
+
         for n in my_game.info_sets:
             n.reset()
 
+    return np.array(mean_node_regrets)
+
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+
     kuhn_game = KuhnGame()
-    fsicrm(kuhn_game, 10000)
+    mean_node_regrets = fsicrm(kuhn_game, 10000)
+    mean_node_regrets = mean_node_regrets[10:]
+
+    for node in kuhn_game.info_sets:
+        print(node.available_information, node.sigma_sum / node.sigma_sum.sum())
+
+    plt.plot(mean_node_regrets[:, 0], label='Average node regrets Player 0')
+    plt.plot(mean_node_regrets[:, 1], label='Average node regrets Player 1')
+    plt.legend()
+    plt.xscale('log')
+    plt.show()

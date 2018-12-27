@@ -59,7 +59,9 @@ class Node:
 class Game:
     def __init__(self, info_sets):
         """
-
+        Skeletton class (specific to each game).
+        We only need this class to provide child node given a starting node (corresponding
+        to an information set), an action, and an history.
         :param info_sets: List of nodes
         """
         self.info_sets = info_sets
@@ -74,7 +76,8 @@ class KuhnGame(Game):
         self.terminal_nodes = info_sets[-4:]
         super(KuhnGame, self).__init__(info_sets)
 
-    def compute_info_sets(self):
+    @staticmethod
+    def compute_info_sets():
         """
         Proceeding depth wise
         WE CONSIDER AT FIRST ONLY NON TERMINAL NODES
@@ -96,6 +99,7 @@ class KuhnGame(Game):
             )]
         idx = 4
 
+        # First Player First Call
         line2 = []
         for j in range(3):
             line2.append(
@@ -104,6 +108,7 @@ class KuhnGame(Game):
                      is_decision=True, player=0, line=2, topological_idx=idx))
             idx += 1
 
+        # Second Player information set
         line3 = []
         for card_2 in range(3):
             for last_call in range(2):
@@ -114,6 +119,7 @@ class KuhnGame(Game):
                          is_decision=True, player=1, line=3, topological_idx=idx))
                 idx += 1
 
+        # First player last action (if any)
         line4 = []
         for card_1 in range(3):
             line4.append(
@@ -122,8 +128,8 @@ class KuhnGame(Game):
                                                             'card': card_1},
                      is_decision=True, player=0, line=4, topological_idx=idx))
             idx += 1
-        # Terminal Nodes
 
+        # Terminal Nodes: 4 in total
         terminal_nodes = [
             Node(actions=[], available_information={'active_player': 0,
                                                     'list_act': None,
@@ -188,8 +194,9 @@ class KuhnGame(Game):
 
         else:
             for candidate in self.info_sets:
-                if candidate.available_information == {'card': new_card, 'active_player': new_player,
-                                                'list_act': actions}:
+                if candidate.available_information == {'card': new_card,
+                                                       'active_player': new_player,
+                                                       'list_act': actions}:
                     return candidate
             raise ValueError
 
