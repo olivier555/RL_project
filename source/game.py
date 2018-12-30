@@ -40,8 +40,18 @@ class Node:
         self.nb_visits_total = 0
         self.chance_child = None
 
+        # Useful only for Outcome Sampling
+        self.last_visit = 0
+
     def compute_chance(self, game, history):
-        assert self.is_chance
+        """
+        This method allows to sample a child from this node.
+        Can also work for a decision node (see outcome-sampling MC CRF)
+        :param game:
+        :param history:
+        :return:
+        """
+        # assert self.is_chance
         action = np.random.choice(self.actions)  # sample an action and not an id
         self.chance_child = game.get_child(self, action=action, history=history)
         return self.chance_child, action

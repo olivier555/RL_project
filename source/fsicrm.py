@@ -7,27 +7,11 @@ Created on Wed Dec 19 09:42:06 2018
 
 import numpy as np
 
+from utils import strategy_update
 from game import Game, KuhnGame
 
 
-def strategy_update(regrets):
-    """
-    :param regrets:
-    :return:
-    """
-    new_strat = np.maximum(regrets, 0.0)
-    if np.max(new_strat) >  1e-8:
-        new_strat = new_strat / np.sum(new_strat)
-        return new_strat
-    else:
-        n_actions = len(new_strat)
-        return 1.0/n_actions*np.ones(n_actions)
-
-
 def fsicrm(my_game: Game, nb_iter):
-    # TODO: COMPRENDRE POURQUOI EN INDICES 11 ET 12 ON CALCULE TOUJOURS LES MEMES VALEURS
-    # TODO: Pour cela, regarder fonctionnement et mise a jour de cette fonction.
-
     mean_node_regrets = []
 
     for _ in range(nb_iter):
