@@ -1,7 +1,8 @@
 import numpy as np
 
 from utils import strategy_update
-from game import Game, KuhnGame
+from game import Game
+from kuhn_game import KuhnGame
 
 
 def oscrm_simulteneous(my_game: Game, nb_iter):

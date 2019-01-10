@@ -7,7 +7,8 @@ Created on Wed Dec 19 09:42:06 2018
 
 import numpy as np
 
-from game import Game, KuhnGame
+from game import Game
+from kuhn_game import KuhnGame
 
 
 def strategy_update_threshold(regrets, t_iter, threshold_constant):
@@ -25,6 +26,7 @@ def strategy_update_threshold(regrets, t_iter, threshold_constant):
         return (1.0 / n_actions) * np.ones(n_actions)
     new_strat[threshold_indices] = 0
     return new_strat / np.sum(new_strat)
+
 
 def dtcrm(my_game: Game, nb_iter, threshold_constant):
     mean_node_regrets = []
