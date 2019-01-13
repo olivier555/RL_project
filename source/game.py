@@ -79,3 +79,11 @@ class Game:
         return
 
 
+class History:
+    def __init__(self):
+        self.history = None
+
+    def update(self, node: Node, action):
+        pass
+
+

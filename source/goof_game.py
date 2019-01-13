@@ -2,7 +2,7 @@ from itertools import permutations
 import numpy as np
 
 from info_set import hash_dict
-from game import Game, Node
+from game import Game, Node, History
 from contrib import goof
 
 
@@ -93,15 +93,21 @@ class GoofGame(Game):
 
         :param starting_node:
         :param action:
-        :param history: last action of player 0
+        :param history: last action of player 0 (int)
         :return:
         """
+        # First case: starting_node has a terminal child
         if starting_node.line == 3*(self.nb_cards - 1) + 2:
-            reward = self.get_reward(actions0=starting_node.available_information["actions_P0"] + [history],
+            actions0 = starting_node.available_information["actions_P0"]
+            if history is not None:
+                actions0.append(history)
+            reward = self.get_reward(actions0=actions0,
                                      actions1=starting_node.available_information["actions_P1"] + [action],
                                      prizes=starting_node.available_information["prizes"])
             return self.reward_to_node[reward]
 
+        # Second case: child node is not terminal
+        # We will construct the information set of the child node to find it
         infoset = {}
         if starting_node.player == 0:
             infoset['active_player'] = 1
@@ -111,10 +117,14 @@ class GoofGame(Game):
             infoset['actions_P1'] = starting_node.available_information["actions_P1"]
 
         elif starting_node.player == 1:
+            actions0 = starting_node.available_information["actions_P0"]
+            if history is not None:
+                actions0.append(history)
+
             infoset['is_chance'] = True
             infoset['current_round'] = starting_node.available_information["current_round"] + 1
             infoset['prizes'] = starting_node.available_information["prizes"]
-            infoset['actions_P0'] = starting_node.available_information["actions_P0"] + [history]
+            infoset['actions_P0'] = actions0
             infoset['actions_P1'] = starting_node.available_information["actions_P1"] + [action]
 
         elif starting_node.is_chance:
@@ -125,7 +135,10 @@ class GoofGame(Game):
             infoset['actions_P1'] = starting_node.available_information["actions_P1"]
 
         # Converting infoset to hash
-        child = self.hash_to_node[hash_dict(infoset)]
+        try:
+            child = self.hash_to_node[hash_dict(infoset)]
+        except KeyError:
+            raise KeyError('following infoset unknown : {}'.format(infoset))
         return child
 
     def get_reward(self, actions0, actions1, prizes):
@@ -151,6 +164,16 @@ class GoofGame(Game):
         points_1 = points_1.sum()
 
         return points_0 - points_1
+
+
+class GoofHistory(History):
+    def __init__(self):
+        super(GoofHistory, self).__init__()
+        self.history = None
+
+    def update(self, node: Node, action):
+        if node.player == 0:
+            self.history = action
 
 
 if __name__ == '__main__':
