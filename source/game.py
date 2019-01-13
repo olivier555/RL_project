@@ -86,4 +86,7 @@ class History:
     def update(self, node: Node, action):
         pass
 
+    def reset(self):
+        self.history = None
+
 

@@ -144,3 +144,6 @@ class KuhnHistory(History):
     def update(self, node: Node, action):
         if node.is_chance:
             self.history[node.topological_idx] = action
+
+    def reset(self):
+        self.history = {}

@@ -175,6 +175,9 @@ class GoofHistory(History):
         if node.player == 0:
             self.history = action
 
+    def reset(self):
+        self.history = None
+
 
 if __name__ == '__main__':
 
