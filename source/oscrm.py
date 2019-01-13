@@ -2,10 +2,10 @@ import numpy as np
 
 from utils import strategy_update
 from game import Game
-from kuhn_game import KuhnGame
+from kuhn_game import KuhnGame, KuhnHistory
 
 
-def oscrm_simulteneous(my_game: Game, nb_iter):
+def oscrm_simulteneous(my_game: Game, nb_iter, history):
     """
     Outcome sampling MCCFR as described in:
     Lanctot, Marc, et al. "Monte Carlo sampling for regret minimization in extensive games.",
@@ -23,22 +23,24 @@ def oscrm_simulteneous(my_game: Game, nb_iter):
 
     for t in range(nb_iter):
         # Forward pass
-        history = {}
+        history.reset()
 
         q_z = 1.0
         for n in my_game.info_sets:
             if n.is_reachable() and not n.is_terminal:
+                action = None
                 if n.is_initial:
                     n.nb_visits = 1
                     n.p_sum = np.ones(len(n.p_sum))
 
-                a, action = n.compute_chance(game=my_game, history=history)
+                a, action = n.compute_chance(game=my_game, history=history.history)
                 q_z *= 1.0 / len(n.actions)
                 a.nb_visits += n.nb_visits
                 a.p_sum += n.p_sum
 
-                if n.is_chance:
-                    history[n.topological_idx] = action  # n.actions[idx]
+                # if n.is_chance:
+                #     history[n.topological_idx] = action  # n.actions[idx]
+                history.update(n, action)
 
         # Backward pass
         for n in my_game.info_sets[::-1]:
@@ -47,7 +49,7 @@ def oscrm_simulteneous(my_game: Game, nb_iter):
                     utility = None
                     sampled_action = None
                     for index_a, a in enumerate(n.actions):
-                        c = my_game.get_child(starting_node=n, action=a, history=history)
+                        c = my_game.get_child(starting_node=n, action=a, history=history.history)
                         if c.is_reachable():
                             utility = c.value if c.player == n.player else -c.value
                             sampled_action = index_a
@@ -80,7 +82,8 @@ def oscrm_simulteneous(my_game: Game, nb_iter):
 
 if __name__ == '__main__':
     kuhn_game = KuhnGame()
-    oscrm_simulteneous(kuhn_game, 10000)
+    history = KuhnHistory()
+    oscrm_simulteneous(kuhn_game, nb_iter=10000, history=history)
 
     for node in kuhn_game.info_sets:
         print(node.available_information, node.sigma_sum / node.sigma_sum.sum())

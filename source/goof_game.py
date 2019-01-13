@@ -141,7 +141,8 @@ class GoofGame(Game):
             raise KeyError('following infoset unknown : {}'.format(infoset))
         return child
 
-    def get_reward(self, actions0, actions1, prizes):
+    @staticmethod
+    def get_reward(actions0, actions1, prizes):
         """
         Computes reward for player 0
         gets points_0 - points_1

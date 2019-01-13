@@ -9,10 +9,10 @@ import numpy as np
 
 from utils import strategy_update
 from game import Game
-from kuhn_game import KuhnGame
+from kuhn_game import KuhnGame, KuhnHistory
 
 
-def fsicrm(my_game: Game, nb_iter):
+def fsicrm(my_game: Game, nb_iter, history):
     """
     Fixed-Strategy Iteration Counterfactual Regret Minimization as described in:
     Neller, Todd W., and Marc Lanctot.,
@@ -25,9 +25,10 @@ def fsicrm(my_game: Game, nb_iter):
     mean_node_regrets = []
 
     for _ in range(nb_iter):
-        history = {}
+        history.reset()
         for n in my_game.info_sets:
             if n.is_reachable():
+                action = None
                 if n.is_initial:
                     n.nb_visits = 1
                     n.p_sum = np.ones(len(n.p_sum))
@@ -36,25 +37,28 @@ def fsicrm(my_game: Game, nb_iter):
                     n.sigma_sum += n.sigma * n.p_sum[n.player]
 
                     for idx_a, a in enumerate(n.actions):
-                        child = my_game.get_child(starting_node=n, action=a, history=history)
+                        child = my_game.get_child(starting_node=n,
+                                                  action=a,
+                                                  history=history.history)
                         p_sum_update = n.p_sum
                         p_sum_update[n.player] = n.sigma[idx_a] * p_sum_update[n.player]
                         child.p_sum += p_sum_update
                         child.nb_visits += n.nb_visits
 
                 elif n.is_chance:
-                    a, action = n.compute_chance(game=my_game, history=history)
+                    a, action = n.compute_chance(game=my_game, history=history.history)
                     a.nb_visits += n.nb_visits
                     a.p_sum += n.p_sum
 
-                    history[n.topological_idx] = action  # n.actions[idx]
+                    # history[n.topological_idx] = action  # n.actions[idx]
+                history.update(n, action)
 
         for n in my_game.info_sets[::-1]:
             if n.is_reachable():
                 if n.is_decision:
                     n.value = 0
                     for index_a, a in enumerate(n.actions):
-                        c = my_game.get_child(starting_node=n, action=a, history=history)
+                        c = my_game.get_child(starting_node=n, action=a, history=history.history)
                         n.value_action[index_a] = c.value if c.player == n.player else -c.value
                     n.value += (n.sigma * n.value_action).sum()
                     cfp = n.p_sum[1 - n.player]
@@ -93,7 +97,8 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     kuhn_game = KuhnGame()
-    mean_node_regrets = fsicrm(kuhn_game, 10000)
+    history = KuhnHistory()
+    mean_node_regrets = fsicrm(kuhn_game, 10000, history)
     mean_node_regrets = mean_node_regrets[10:]
 
     for node in kuhn_game.info_sets:
