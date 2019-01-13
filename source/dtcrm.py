@@ -29,6 +29,16 @@ def strategy_update_threshold(regrets, t_iter, threshold_constant):
 
 
 def dtcrm(my_game: Game, nb_iter, threshold_constant):
+    """
+    Pruning-based method based on:
+    Brown, Noam, Christian Kroer, and Tuomas Sandholm.,
+    "Dynamic Thresholding and Pruning for Regret Minimization." AAAI. 2017.
+
+    :param my_game:
+    :param nb_iter:
+    :param threshold_constant:
+    :return:
+    """
     mean_node_regrets = []
 
     for t in range(nb_iter):

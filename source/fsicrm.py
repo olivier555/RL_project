@@ -13,6 +13,15 @@ from kuhn_game import KuhnGame
 
 
 def fsicrm(my_game: Game, nb_iter):
+    """
+    Fixed-Strategy Iteration Counterfactual Regret Minimization as described in:
+    Neller, Todd W., and Marc Lanctot.,
+    "An Introduction to Counterfactual Regret Minimization." (2013).
+
+    :param my_game:
+    :param nb_iter:
+    :return:
+    """
     mean_node_regrets = []
 
     for _ in range(nb_iter):

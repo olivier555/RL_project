@@ -7,7 +7,11 @@ from kuhn_game import KuhnGame
 
 def oscrm_simulteneous(my_game: Game, nb_iter):
     """
-    Uniform sampling
+    Outcome sampling MCCFR as described in:
+    Lanctot, Marc, et al. "Monte Carlo sampling for regret minimization in extensive games.",
+    Advances in neural information processing systems. 2009.
+
+    Using Uniform sampling
 
     Explorative (optimistical)
 
