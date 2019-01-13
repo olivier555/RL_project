@@ -11,6 +11,8 @@ from utils import strategy_update
 from game import Game
 from kuhn_game import KuhnGame, KuhnHistory
 
+from goof_game import GoofGame, GoofHistory
+
 
 def fsicrm(my_game: Game, nb_iter, history):
     """
@@ -96,12 +98,12 @@ def fsicrm(my_game: Game, nb_iter, history):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    kuhn_game = KuhnGame()
+    game = KuhnGame()
     history = KuhnHistory()
-    mean_node_regrets = fsicrm(kuhn_game, 10000, history)
+    mean_node_regrets = fsicrm(game, 10000, history)
     mean_node_regrets = mean_node_regrets[10:]
 
-    for node in kuhn_game.info_sets:
+    for node in game.info_sets:
         print(node.available_information, node.sigma_sum / node.sigma_sum.sum())
 
     plt.plot(mean_node_regrets[:, 0], label='Average node regrets Player 0')

@@ -1,5 +1,6 @@
 from itertools import permutations
 import numpy as np
+from copy import deepcopy
 
 from info_set import hash_dict
 from game import Game, Node, History
@@ -33,28 +34,35 @@ class GoofGame(Game):
                         p2 = goof.Player('P2', nb_cards=self.nb_cards, previous=previous_p1)
                         prizes = goof.Prize(nb_cards=self.nb_cards, all_cards=all_cards,
                                             current_round=nb_rounds)
-
                         engine = goof.Engine(p1=p1, p2=p2, prize=prizes)
 
                         info_chance = engine.get_infoset(is_chance=True)
                         info_p0 = engine.get_infoset(active_player=0)
                         info_p1 = engine.get_infoset(active_player=1)
 
-                        if nb_rounds == 0:
-                            dec_chance = Node(actions=cards,
-                                              available_information=info_chance, is_chance=True,
-                                              is_initial=True,
-                                              line=nb_rounds*3)
-                        else:
-                            dec_chance = Node(actions=[card for card in cards
-                                                       if card not in prizes.showing],
-                                              available_information=info_chance, is_chance=True,
-                                              line=nb_rounds*3)
-                        dec_p0 = Node(actions=[card for card in cards if card not in previous_p0],
+
+                        # OLIVIER: CETTE LIGNE NE FONCTIONNE PAS CAR
+                        # LES ACTIONS POSSIBLES ASSOCIEES AUX NOEUDS CHANCE NE SONT PAS BONS
+                        # chance_actions = [card for card in cards
+                        #                   if card not in prizes.showing]
+
+                        # OLIVIER: j'ai RAJOUTER UN SORT ICI
+                        chance_actions = np.sort(prizes.all_cards[nb_rounds:])
+
+                        act_p0 = [card for card in cards if card not in previous_p0]
+                        act_p1 = [card for card in cards if card not in previous_p1]
+
+                        dec_chance = Node(actions=chance_actions,
+                                          available_information=info_chance, is_chance=True,
+                                          is_initial=(nb_rounds == 0),
+                                          line=nb_rounds*3)
+                        dec_p0 = Node(actions=act_p0,
                                       available_information=info_p0, is_decision=True,
+                                      player=0,
                                       line=nb_rounds*3+1)
-                        dec_p1 = Node(actions=[card for card in cards if card not in previous_p1],
+                        dec_p1 = Node(actions=act_p1,
                                       available_information=info_p1, is_decision=True,
+                                      player=1,
                                       line=nb_rounds*3+2)
 
                         nodes_li.append(dec_chance)
@@ -98,7 +106,7 @@ class GoofGame(Game):
         """
         # First case: starting_node has a terminal child
         if starting_node.line == 3*(self.nb_cards - 1) + 2:
-            actions0 = starting_node.available_information["actions_P0"]
+            actions0 = deepcopy(starting_node.available_information["actions_P0"])
             if history is not None:
                 actions0.append(history)
             reward = self.get_reward(actions0=actions0,
@@ -117,7 +125,7 @@ class GoofGame(Game):
             infoset['actions_P1'] = starting_node.available_information["actions_P1"]
 
         elif starting_node.player == 1:
-            actions0 = starting_node.available_information["actions_P0"]
+            actions0 = deepcopy(starting_node.available_information["actions_P0"])
             if history is not None:
                 actions0.append(history)
 
@@ -182,7 +190,12 @@ class GoofHistory(History):
 
 if __name__ == '__main__':
 
-    game = GoofGame(3)
-    print(game.info_sets[0].available_information)
-    print(game.info_sets[100].available_information)
-    print(game.info_sets[200].available_information)
+    game = GoofGame(nb_cards=2)
+
+    for n in game.info_sets:
+        print(n.available_information, n.actions)
+    # print(game.info_sets[10].available_information)
+    # child_info = game.get_child(starting_node=game.info_sets[10],
+    #                             action=1,
+    #                             history=None).available_information
+    # print(child_info)

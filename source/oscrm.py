@@ -4,6 +4,8 @@ from utils import strategy_update
 from game import Game
 from kuhn_game import KuhnGame, KuhnHistory
 
+from goof_game import GoofGame, GoofHistory
+
 
 def oscrm_simulteneous(my_game: Game, nb_iter, history):
     """
@@ -28,7 +30,6 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
         q_z = 1.0
         for n in my_game.info_sets:
             if n.is_reachable() and not n.is_terminal:
-                action = None
                 if n.is_initial:
                     n.nb_visits = 1
                     n.p_sum = np.ones(len(n.p_sum))
@@ -46,14 +47,24 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
         for n in my_game.info_sets[::-1]:
             if n.is_reachable():
                 if n.is_decision:
-                    utility = None
-                    sampled_action = None
-                    for index_a, a in enumerate(n.actions):
-                        c = my_game.get_child(starting_node=n, action=a, history=history.history)
-                        if c.is_reachable():
-                            utility = c.value if c.player == n.player else -c.value
-                            sampled_action = index_a
-                            break
+
+                    # OLIVIER: CE BLOC REMPLACE PAR CELUI D'APRES PARCE QUE
+                    # JE STOCKAIS DANS HISTORY UNIQUEMENT LA DERNIERE ACTION DE P0 ...
+                    # LA COMBINE QUE J'EMPLOIE NE MARCHE QUE POUR CET ALGO,
+                    # JE MODIFIERAI TOUT PLUS TARD
+
+                    # utility = None
+                    # sampled_action = None
+                    # for index_a, a in enumerate(n.actions):
+                    #     c = my_game.get_child(starting_node=n, action=a, history=history.history)
+                    #     if c.is_reachable():
+                    #         utility = c.value if c.player == n.player else -c.value
+                    #         sampled_action = index_a
+                    #         break
+
+                    c = n.chance_child
+                    sampled_action = n.idx_action_child
+                    utility = c.value if c.player == n.player else -c.value
 
                     n.value = n.sigma[sampled_action] * utility
                     cfp = n.p_sum[1 - n.player]
@@ -81,9 +92,13 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
 
 
 if __name__ == '__main__':
-    kuhn_game = KuhnGame()
-    history = KuhnHistory()
-    oscrm_simulteneous(kuhn_game, nb_iter=10000, history=history)
+    # game = KuhnGame()
+    # history = KuhnHistory()
 
-    for node in kuhn_game.info_sets:
+    game = GoofGame(nb_cards=2)
+    history = GoofHistory()
+
+    oscrm_simulteneous(game, nb_iter=10000, history=history)
+
+    for node in game.info_sets:
         print(node.available_information, node.sigma_sum / node.sigma_sum.sum())
