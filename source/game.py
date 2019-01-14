@@ -67,6 +67,8 @@ class Node:
         self.p_sum.fill(0)
         self.value_action.fill(0)
         self.value = 0
+        if self.is_chance:
+            self.player = None
 
     #OLIVIER: J'AI AJOUTE CES DEUX METHODES CAR SINON LA SUPPRESSION DES INFORMATION
     # SET DUPLIQUES NE FONCTIONNE PAS

@@ -105,6 +105,9 @@ class GoofGame(Game):
         :return:
         """
         # First case: starting_node has a terminal child
+#        print("node:", starting_node.available_information)
+#        print("action:", action)
+#        print("history:", history)
         if starting_node.line == 3*(self.nb_cards - 1) + 2:
             actions0 = deepcopy(starting_node.available_information["actions_P0"])
             if history is not None:
@@ -193,7 +196,7 @@ if __name__ == '__main__':
     game = GoofGame(nb_cards=2)
 
     for n in game.info_sets:
-        print(n.available_information, n.actions)
+        print(n.available_information, n.actions, n.utility)
     # print(game.info_sets[10].available_information)
     # child_info = game.get_child(starting_node=game.info_sets[10],
     #                             action=1,

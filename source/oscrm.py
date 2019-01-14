@@ -30,6 +30,7 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
         q_z = 1.0
         for n in my_game.info_sets:
             if n.is_reachable() and not n.is_terminal:
+                print(n.available_information, n.actions, n.utility)
                 if n.is_initial:
                     n.nb_visits = 1
                     n.p_sum = np.ones(len(n.p_sum))
@@ -98,7 +99,8 @@ if __name__ == '__main__':
     game = GoofGame(nb_cards=2)
     history = GoofHistory()
 
-    oscrm_simulteneous(game, nb_iter=10000, history=history)
+    oscrm_simulteneous(game, nb_iter=100, history=history)
 
     for node in game.info_sets:
-        print(node.available_information, node.sigma_sum / node.sigma_sum.sum())
+        print(node.available_information)
+        print(node.sigma_sum / node.sigma_sum.sum())
