@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils import strategy_update
+from utils import strategy_update, plot_value_iter
 from game import Game
 from kuhn_game import KuhnGame, KuhnHistory
 
@@ -22,15 +22,18 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
     :return:
     """
     mean_node_regrets = []
+    value_iter = []
 
     for t in range(nb_iter):
         # Forward pass
+
+        for n in my_game.info_sets:
+            n.reset()
         history.reset()
 
         q_z = 1.0
         for n in my_game.info_sets:
             if n.is_reachable() and not n.is_terminal:
-                print(n.available_information, n.actions, n.utility)
                 if n.is_initial:
                     n.nb_visits = 1
                     n.p_sum = np.ones(len(n.p_sum))
@@ -84,12 +87,11 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
                 else:
                     n.value = n.utility
 
+                if n.is_initial:
+                    value_iter.append(n.value)
                 n.last_visit = t
 
-        for n in my_game.info_sets:
-            n.reset()
-
-    return np.array(mean_node_regrets)
+    return np.array(value_iter)
 
 
 if __name__ == '__main__':
@@ -99,8 +101,10 @@ if __name__ == '__main__':
     game = GoofGame(nb_cards=2)
     history = GoofHistory()
 
-    oscrm_simulteneous(game, nb_iter=100, history=history)
+    values = oscrm_simulteneous(game, nb_iter=10, history=history)
+    
+    plot_value_iter(values)
 
-    for node in game.info_sets:
-        print(node.available_information)
-        print(node.sigma_sum / node.sigma_sum.sum())
+#    for node in game.info_sets:
+#        print(node.available_information)
+#        print(node.sigma_sum / node.sigma_sum.sum())

@@ -7,7 +7,7 @@ Created on Wed Dec 19 09:42:06 2018
 
 import numpy as np
 
-from utils import strategy_update
+from utils import strategy_update, plot_value_iter
 from game import Game
 from kuhn_game import KuhnGame, KuhnHistory
 
@@ -25,6 +25,7 @@ def fsicrm(my_game: Game, nb_iter, history):
     :return:
     """
     mean_node_regrets = []
+    value_iter = []
 
     for _ in range(nb_iter):
         history.reset()
@@ -72,6 +73,9 @@ def fsicrm(my_game: Game, nb_iter, history):
                     n.value = n.chance_child.value
                 else:
                     n.value = n.utility
+                
+                if n.is_initial:
+                    value_iter.append(n.value)
 
 
         #TODO: Find something better than averaging over nodes
@@ -81,7 +85,7 @@ def fsicrm(my_game: Game, nb_iter, history):
         for n in my_game.info_sets:
             if n.is_decision:
                 if n.player == 0:
-                    expected_regrets_0.append((n.regrets*n.sigma).mean())
+                    expected_regrets_0.append((n.regrets * n.sigma).mean())
                 else:
                     expected_regrets_1.append((n.regrets * n.sigma).mean())
         mean_0 = np.mean(expected_regrets_0)
@@ -92,22 +96,25 @@ def fsicrm(my_game: Game, nb_iter, history):
         for n in my_game.info_sets:
             n.reset()
 
-    return np.array(mean_node_regrets)
-
+#    return np.array(mean_node_regrets)
+    return value_iter
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     game = KuhnGame()
     history = KuhnHistory()
-    mean_node_regrets = fsicrm(game, 10000, history)
-    mean_node_regrets = mean_node_regrets[10:]
+    values = fsicrm(game, 10000, history)
+    plot_value_iter(values)
+    
+#    mean_node_regrets = fsicrm(game, 10000, history)
+#    mean_node_regrets = mean_node_regrets[10:]
 
-    for node in game.info_sets:
-        print(node.available_information, node.sigma_sum / node.sigma_sum.sum())
-
-    plt.plot(mean_node_regrets[:, 0], label='Average node regrets Player 0')
-    plt.plot(mean_node_regrets[:, 1], label='Average node regrets Player 1')
-    plt.legend()
-    plt.xscale('log')
-    plt.show()
+#    for node in game.info_sets:
+#        print(node.available_information, node.sigma_sum / node.sigma_sum.sum())
+#
+#    plt.plot(mean_node_regrets[:, 0], label='Average node regrets Player 0')
+#    plt.plot(mean_node_regrets[:, 1], label='Average node regrets Player 1')
+#    plt.legend()
+#    plt.xscale('log')
+#    plt.show()

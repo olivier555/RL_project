@@ -22,8 +22,6 @@ def strategy_update_threshold(regrets, t_iter, threshold_constant):
         return (1.0 / n_actions) * np.ones(n_actions)
     threshold = (threshold_constant - 1) * np.sqrt(np.log(n_actions) / (2 * t_iter)) / (n_actions ** 2)
     threshold_indices = new_strat <= threshold
-    if np.sum(threshold_indices) >= 1:
-        print(threshold_indices)
     if threshold_indices.all():
         return (1.0 / n_actions) * np.ones(n_actions)
     new_strat[threshold_indices] = 0
@@ -107,14 +105,95 @@ def dtcrm(my_game: Game, nb_iter, threshold_constant, history):
 
     return np.array(mean_node_regrets)
 
+def dtoscrm(my_game: Game, nb_iter, threshold_constant, history):
+    """
+    Pruning-based method based on:
+    Brown, Noam, Christian Kroer, and Tuomas Sandholm.,
+    "Dynamic Thresholding and Pruning for Regret Minimization." AAAI. 2017.
+
+    :param my_game:
+    :param nb_iter:
+    :param threshold_constant:
+    :return:
+    """
+    mean_node_regrets = []
+
+    for t in range(nb_iter):
+        # Forward pass
+        history.reset()
+
+        q_z = 1.0
+        for n in my_game.info_sets:
+            if n.is_reachable() and not n.is_terminal:
+                if n.is_initial:
+                    n.nb_visits = 1
+                    n.p_sum = np.ones(len(n.p_sum))
+
+                a, action = n.compute_chance(game=my_game, history=history.history)
+                q_z *= 1.0 / len(n.actions)
+                a.nb_visits += n.nb_visits
+                a.p_sum += n.p_sum
+
+                # if n.is_chance:
+                #     history[n.topological_idx] = action  # n.actions[idx]
+                history.update(n, action)
+
+        # Backward pass
+        for n in my_game.info_sets[::-1]:
+            if n.is_reachable():
+                if n.is_decision:
+
+                    # OLIVIER: CE BLOC REMPLACE PAR CELUI D'APRES PARCE QUE
+                    # JE STOCKAIS DANS HISTORY UNIQUEMENT LA DERNIERE ACTION DE P0 ...
+                    # LA COMBINE QUE J'EMPLOIE NE MARCHE QUE POUR CET ALGO,
+                    # JE MODIFIERAI TOUT PLUS TARD
+
+                    # utility = None
+                    # sampled_action = None
+                    # for index_a, a in enumerate(n.actions):
+                    #     c = my_game.get_child(starting_node=n, action=a, history=history.history)
+                    #     if c.is_reachable():
+                    #         utility = c.value if c.player == n.player else -c.value
+                    #         sampled_action = index_a
+                    #         break
+
+                    c = n.chance_child
+                    sampled_action = n.idx_action_child
+                    utility = c.value if c.player == n.player else -c.value
+
+                    n.value = n.sigma[sampled_action] * utility
+                    cfp = n.p_sum[1 - n.player]
+
+                    regrets = -n.value*np.ones(len(n.actions))
+                    regrets[sampled_action] += utility
+                    regrets = (1.0/q_z)*cfp*regrets
+                    n.regrets += regrets
+
+                    n.sigma = strategy_update_threshold(n.regrets, t, threshold_constant)
+                    n.sigma_sum += (t - n.last_visit) * n.sigma * n.p_sum[n.player]
+
+                elif n.is_chance:
+                    n.player = n.chance_child.player
+                    n.value = n.chance_child.value
+                else:
+                    n.value = n.utility
+
+                n.last_visit = t
+
+        for n in my_game.info_sets:
+            n.reset()
+
+    return np.array(mean_node_regrets)
+
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    game = KuhnGame()
-    history = KuhnHistory()
-    mean_node_regrets = dtcrm(game,
-                              nb_iter=1000,
+    game = GoofGame(nb_cards=3)
+    history = GoofHistory()
+    mean_node_regrets = dtoscrm(game,
+                              nb_iter=10000,
                               threshold_constant=1,
                               history=history)
     mean_node_regrets = mean_node_regrets[10:]
