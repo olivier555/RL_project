@@ -1,5 +1,7 @@
 import numpy as np
 
+import info_set
+
 
 class Node:
     def __init__(self, actions=[], available_information={}, is_chance=False,
@@ -38,6 +40,7 @@ class Node:
         self.value = 0
         self.nb_visits_total = 0
         self.chance_child = None
+        self.idx_action_child = None
 
         # Useful only for Outcome Sampling
         self.last_visit = 0
@@ -50,8 +53,9 @@ class Node:
         :param history:
         :return:
         """
-        # assert self.is_chance
-        action = np.random.choice(self.actions)  # sample an action and not an id
+        # TODO: verify that in algos everything is coherent
+        self.idx_action_child = np.random.choice(np.arange(len(self.actions)))
+        action = self.actions[self.idx_action_child]
         self.chance_child = game.get_child(self, action=action, history=history)
         return self.chance_child, action
 
@@ -63,6 +67,17 @@ class Node:
         self.p_sum.fill(0)
         self.value_action.fill(0)
         self.value = 0
+        if self.is_chance:
+            self.player = None
+
+    #OLIVIER: J'AI AJOUTE CES DEUX METHODES CAR SINON LA SUPPRESSION DES INFORMATION
+    # SET DUPLIQUES NE FONCTIONNE PAS
+    def __eq__(self, other):
+        return info_set.hash_dict(self.available_information) == \
+               info_set.hash_dict(other.available_information)
+
+    def __hash__(self):
+        return info_set.hash_dict(self.available_information)
 
 
 class Game:
@@ -77,5 +92,16 @@ class Game:
 
     def get_child(self, starting_node, action, history):
         return
+
+
+class History:
+    def __init__(self):
+        self.history = None
+
+    def update(self, node: Node, action):
+        pass
+
+    def reset(self):
+        self.history = None
 
 

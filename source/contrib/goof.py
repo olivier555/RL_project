@@ -57,6 +57,7 @@ class Prize(Deck):
     def __init__(self, nb_cards, all_cards=None, current_round=None):
         super(Prize, self).__init__(nb_cards=nb_cards)
         self.showing = []
+        self.all_cards = all_cards
 
         if all_cards is not None and current_round is not None:
             self.cards = all_cards[current_round+1:]
@@ -149,7 +150,3 @@ class Engine(object):
         print("%s won that round, for a prize of %d points." %
               (winner.name, prize))
 
-
-if __name__ == "__main__":
-    new_game = Engine()
-    new_game.play()

@@ -1,4 +1,4 @@
-from game import Game, Node
+from game import Game, Node, History
 
 
 class KuhnGame(Game):
@@ -134,3 +134,16 @@ class KuhnGame(Game):
     @staticmethod
     def are_terminal_actions(list_actions):
         return list_actions in [[0, 0], [0, 1, 0], [0, 1, 1], [1, 0], [1, 1]]
+
+
+class KuhnHistory(History):
+    def __init__(self):
+        super(KuhnHistory, self).__init__()
+        self.history = {}
+
+    def update(self, node: Node, action):
+        if node.is_chance:
+            self.history[node.topological_idx] = action
+
+    def reset(self):
+        self.history = {}

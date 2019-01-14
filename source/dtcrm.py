@@ -8,13 +8,15 @@ Created on Wed Dec 19 09:42:06 2018
 import numpy as np
 
 from game import Game
-from kuhn_game import KuhnGame
+from kuhn_game import KuhnGame, KuhnHistory
+from goof_game import GoofGame, GoofHistory
+
 
 
 def strategy_update_threshold(regrets, t_iter, threshold_constant):
     new_strat = np.maximum(regrets, 0.0)
     n_actions = len(new_strat)
-    if np.max(new_strat) >  1e-8:
+    if np.max(new_strat) > 1e-8:
         new_strat = new_strat / np.sum(new_strat)
     else:
         return (1.0 / n_actions) * np.ones(n_actions)
@@ -28,13 +30,24 @@ def strategy_update_threshold(regrets, t_iter, threshold_constant):
     return new_strat / np.sum(new_strat)
 
 
-def dtcrm(my_game: Game, nb_iter, threshold_constant):
+def dtcrm(my_game: Game, nb_iter, threshold_constant, history):
+    """
+    Pruning-based method based on:
+    Brown, Noam, Christian Kroer, and Tuomas Sandholm.,
+    "Dynamic Thresholding and Pruning for Regret Minimization." AAAI. 2017.
+
+    :param my_game:
+    :param nb_iter:
+    :param threshold_constant:
+    :return:
+    """
     mean_node_regrets = []
 
     for t in range(nb_iter):
-        history = {}
+        history.reset()
         for n in my_game.info_sets:
             if n.is_reachable():
+                action = None
                 if n.is_initial:
                     n.nb_visits = 1
                     n.p_sum = np.ones(len(n.p_sum))
@@ -44,25 +57,26 @@ def dtcrm(my_game: Game, nb_iter, threshold_constant):
 
                     for idx_a, a in enumerate(n.actions):
                         
-                        child = my_game.get_child(starting_node=n, action=a, history=history)
+                        child = my_game.get_child(starting_node=n, action=a, history=history.history)
                         p_sum_update = n.p_sum
                         p_sum_update[n.player] = n.sigma[idx_a] * p_sum_update[n.player]
                         child.p_sum += p_sum_update
                         child.nb_visits += n.nb_visits
 
                 elif n.is_chance:
-                    a, action = n.compute_chance(game=my_game, history=history)
+                    a, action = n.compute_chance(game=my_game, history=history.history)
                     a.nb_visits += n.nb_visits
                     a.p_sum += n.p_sum
 
-                    history[n.topological_idx] = action  # n.actions[idx]
+                    # history[n.topological_idx] = action  # n.actions[idx]
+                history.update(n, action)
 
         for n in my_game.info_sets[::-1]:
             if n.is_reachable():
                 if n.is_decision:
                     n.value = 0
                     for index_a, a in enumerate(n.actions):
-                        c = my_game.get_child(starting_node=n, action=a, history=history)
+                        c = my_game.get_child(starting_node=n, action=a, history=history.history)
                         n.value_action[index_a] = c.value if c.player == n.player else -c.value
                     n.value += (n.sigma * n.value_action).sum()
                     cfp = n.p_sum[1 - n.player]
@@ -97,11 +111,15 @@ def dtcrm(my_game: Game, nb_iter, threshold_constant):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    kuhn_game = KuhnGame()
-    mean_node_regrets = dtcrm(kuhn_game, 1000, 1)
+    game = KuhnGame()
+    history = KuhnHistory()
+    mean_node_regrets = dtcrm(game,
+                              nb_iter=1000,
+                              threshold_constant=1,
+                              history=history)
     mean_node_regrets = mean_node_regrets[10:]
 
-    for node in kuhn_game.info_sets:
+    for node in game.info_sets:
         print(node.available_information, node.sigma_sum / node.sigma_sum.sum())
 
     plt.plot(mean_node_regrets[:, 0], label='Average node regrets Player 0')
