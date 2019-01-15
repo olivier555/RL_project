@@ -77,8 +77,6 @@ class Node:
         if self.is_chance:
             self.player = None
 
-    #OLIVIER: J'AI AJOUTE CES DEUX METHODES CAR SINON LA SUPPRESSION DES INFORMATION
-    # SET DUPLIQUES NE FONCTIONNE PAS
     def __eq__(self, other):
         return info_set.hash_dict(self.available_information) == \
                info_set.hash_dict(other.available_information)
