@@ -45,7 +45,7 @@ class Node:
         # Useful only for Outcome Sampling
         self.last_visit = 0
 
-    def compute_chance(self, game, history):
+    def compute_chance(self, game, history, sigma=None):
         """
         This method allows to sample a child from this node.
         Can also work for a decision node (see outcome-sampling MC CRF)
@@ -54,7 +54,14 @@ class Node:
         :return:
         """
         # TODO: verify that in algos everything is coherent
-        self.idx_action_child = np.random.choice(np.arange(len(self.actions)))
+        if sigma is None:
+            self.idx_action_child = np.random.choice(np.arange(len(self.actions)))
+        else:
+            try:
+                self.idx_action_child = np.random.choice(np.arange(len(self.actions)), p=sigma)
+            except ValueError:
+                self.idx_action_child = np.random.choice(np.arange(len(self.actions)))
+                # print('Non admissible strategy for sampling')
         action = self.actions[self.idx_action_child]
         self.chance_child = game.get_child(self, action=action, history=history)
         return self.chance_child, action

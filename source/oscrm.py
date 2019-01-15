@@ -1,13 +1,13 @@
 import numpy as np
+import time
 
-from utils import strategy_update, plot_value_iter
+from utils import strategy_update, plot_value_iter, value_eval, mean_regret
 from game import Game
-from kuhn_game import KuhnGame, KuhnHistory
 
 from goof_game import GoofGame, GoofHistory
 
 
-def oscrm_simulteneous(my_game: Game, nb_iter, history):
+def oscrm_simulteneous(my_game: Game, nb_iter, history, nb_mc_iter=4000, eval_every=10):
     """
     Outcome sampling MCCFR as described in:
     Lanctot, Marc, et al. "Monte Carlo sampling for regret minimization in extensive games.",
@@ -23,6 +23,9 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
     """
     mean_node_regrets = []
     value_iter = []
+    times = []
+    measure_time = 0.0
+    start = time.time()
 
     for t in range(nb_iter):
         # Forward pass
@@ -87,11 +90,23 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history):
                 else:
                     n.value = n.utility
 
-                if n.is_initial:
-                    value_iter.append(n.value)
-                n.last_visit = t
+                # if n.is_initial:
+                #     value_iter.append(n.value)
+                # n.last_visit = t
 
-    return np.array(value_iter)
+        this_loop_time = time.time() - start - measure_time
+        if t % eval_every == 0:
+            start_measure = time.time()
+            times.append(this_loop_time)
+            value_iter.append(value_eval(my_game, nb_mc_iter=nb_mc_iter, history=history))
+            mean_node_regrets.append(mean_regret(my_game))
+            measure_time += time.time() - start_measure
+
+    return {
+        'time': times,
+        'values': value_iter,
+        'regrets': mean_node_regrets
+    }
 
 
 if __name__ == '__main__':

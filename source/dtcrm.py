@@ -6,11 +6,12 @@ Created on Wed Dec 19 09:42:06 2018
 """
 
 import numpy as np
+import time
 
 from game import Game
 from kuhn_game import KuhnGame, KuhnHistory
 from goof_game import GoofGame, GoofHistory
-
+from utils import value_eval, mean_regret, plot_traj
 
 
 def strategy_update_threshold(regrets, t_iter, threshold_constant):
@@ -28,7 +29,7 @@ def strategy_update_threshold(regrets, t_iter, threshold_constant):
     return new_strat / np.sum(new_strat)
 
 
-def dtcrm(my_game: Game, nb_iter, threshold_constant, history):
+def dtcrm(my_game: Game, nb_iter, threshold_constant, history, nb_mc_iter=4000, eval_every=10):
     """
     Pruning-based method based on:
     Brown, Noam, Christian Kroer, and Tuomas Sandholm.,
@@ -40,6 +41,10 @@ def dtcrm(my_game: Game, nb_iter, threshold_constant, history):
     :return:
     """
     mean_node_regrets = []
+    value_iter = []
+    times = []
+    measure_time = 0.0
+    start = time.time()
 
     for t in range(nb_iter):
         history.reset()
@@ -87,23 +92,35 @@ def dtcrm(my_game: Game, nb_iter, threshold_constant, history):
                 else:
                     n.value = n.utility
 
-        expected_regrets_0 = []
-        expected_regrets_1 = []
-        for n in my_game.info_sets:
-            if n.is_decision:
-                if n.player == 0:
-                    expected_regrets_0.append((n.regrets*n.sigma).mean())
-                else:
-                    expected_regrets_1.append((n.regrets * n.sigma).mean())
-        mean_0 = np.mean(expected_regrets_0)
-        mean_1 = np.mean(expected_regrets_1)
-
-        mean_node_regrets.append([mean_0, mean_1])
+        # expected_regrets_0 = []
+        # expected_regrets_1 = []
+        # for n in my_game.info_sets:
+        #     if n.is_decision:
+        #         if n.player == 0:
+        #             expected_regrets_0.append((n.regrets*n.sigma).mean())
+        #         else:
+        #             expected_regrets_1.append((n.regrets * n.sigma).mean())
+        # mean_0 = np.mean(expected_regrets_0)
+        # mean_1 = np.mean(expected_regrets_1)
+        #
+        # mean_node_regrets.append([mean_0, mean_1])
+        this_loop_time = time.time() - start - measure_time
+        if t % eval_every == 0:
+            start_measure = time.time()
+            times.append(this_loop_time)
+            value_iter.append(value_eval(my_game, nb_mc_iter=nb_mc_iter, history=history))
+            mean_node_regrets.append(mean_regret(my_game))
+            measure_time += time.time() - start_measure
 
         for n in my_game.info_sets:
             n.reset()
 
-    return np.array(mean_node_regrets)
+    return {
+        'time': times,
+        'values': value_iter,
+        'regrets': mean_node_regrets
+    }
+
 
 def dtoscrm(my_game: Game, nb_iter, threshold_constant, history):
     """
@@ -142,21 +159,6 @@ def dtoscrm(my_game: Game, nb_iter, threshold_constant, history):
         for n in my_game.info_sets[::-1]:
             if n.is_reachable():
                 if n.is_decision:
-
-                    # OLIVIER: CE BLOC REMPLACE PAR CELUI D'APRES PARCE QUE
-                    # JE STOCKAIS DANS HISTORY UNIQUEMENT LA DERNIERE ACTION DE P0 ...
-                    # LA COMBINE QUE J'EMPLOIE NE MARCHE QUE POUR CET ALGO,
-                    # JE MODIFIERAI TOUT PLUS TARD
-
-                    # utility = None
-                    # sampled_action = None
-                    # for index_a, a in enumerate(n.actions):
-                    #     c = my_game.get_child(starting_node=n, action=a, history=history.history)
-                    #     if c.is_reachable():
-                    #         utility = c.value if c.player == n.player else -c.value
-                    #         sampled_action = index_a
-                    #         break
-
                     c = n.chance_child
                     sampled_action = n.idx_action_child
                     utility = c.value if c.player == n.player else -c.value
@@ -184,7 +186,6 @@ def dtoscrm(my_game: Game, nb_iter, threshold_constant, history):
             n.reset()
 
     return np.array(mean_node_regrets)
-
 
 
 if __name__ == '__main__':
