@@ -74,15 +74,6 @@ def value_eval(my_game: Game, nb_mc_iter, history):
 
                     n.value = n.sigma[sampled_action] * utility
 
-                    # cfp = n.p_sum[1 - n.player]
-                    # regrets = -n.value*np.ones(len(n.actions))
-                    # regrets[sampled_action] += utility
-                    # regrets = (1.0/q_z)*cfp*regrets
-                    # n.regrets += regrets
-
-                    # n.sigma = strategy_update(n.regrets)
-                    # n.sigma_sum += (t - n.last_visit) * n.sigma * n.p_sum[n.player]
-
                 elif n.is_chance:
                     n.player = n.chance_child.player
                     n.value = n.chance_child.value
@@ -90,8 +81,10 @@ def value_eval(my_game: Game, nb_mc_iter, history):
                     n.value = n.utility
 
                 if n.is_initial:
-                    value_iter.append(n.value)
-                n.last_visit = t
+                    val = n.value
+                    if n.player == 1:
+                        val = -val
+                    value_iter.append(val)
 
     return np.mean(value_iter)
 

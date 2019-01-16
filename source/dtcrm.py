@@ -21,7 +21,7 @@ def strategy_update_threshold(regrets, t_iter, threshold_constant):
         new_strat = new_strat / np.sum(new_strat)
     else:
         return (1.0 / n_actions) * np.ones(n_actions)
-    threshold = (threshold_constant - 1) * np.sqrt(np.log(n_actions) / (2 * t_iter)) / (n_actions ** 2)
+    threshold = (threshold_constant ** 2 - 1) / (2 * threshold_constant * np.sqrt(t_iter + 1) * (n_actions ** 2))
     threshold_indices = new_strat <= threshold
     if threshold_indices.all():
         return (1.0 / n_actions) * np.ones(n_actions)
@@ -60,11 +60,12 @@ def dtcrm(my_game: Game, nb_iter, threshold_constant, history, nb_mc_iter=4000, 
 
                     for idx_a, a in enumerate(n.actions):
                         
-                        child = my_game.get_child(starting_node=n, action=a, history=history.history)
-                        p_sum_update = n.p_sum
-                        p_sum_update[n.player] = n.sigma[idx_a] * p_sum_update[n.player]
-                        child.p_sum += p_sum_update
-                        child.nb_visits += n.nb_visits
+                        if n.sigma[idx_a] > 0:
+                            child = my_game.get_child(starting_node=n, action=a, history=history.history)
+                            p_sum_update = n.p_sum
+                            p_sum_update[n.player] = n.sigma[idx_a] * p_sum_update[n.player]
+                            child.p_sum += p_sum_update
+                            child.nb_visits += n.nb_visits
 
                 elif n.is_chance:
                     a, action = n.compute_chance(game=my_game, history=history.history)
