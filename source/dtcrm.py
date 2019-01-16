@@ -145,6 +145,9 @@ def dtoscrm(my_game: Game, nb_iter, threshold_constant, history, eval_every=10,
         # Forward pass
         history.reset()
 
+        for n in my_game.info_sets:
+            n.reset()
+
         q_z = 1.0
         for n in my_game.info_sets:
             if n.is_reachable() and not n.is_terminal:
@@ -188,9 +191,6 @@ def dtoscrm(my_game: Game, nb_iter, threshold_constant, history, eval_every=10,
 
                 n.last_visit = t
 
-        for n in my_game.info_sets:
-            n.reset()
-
         this_loop_time = time.time() - start - measure_time
         if t % eval_every == 0:
             start_measure = time.time()
@@ -215,9 +215,9 @@ if __name__ == '__main__':
     game = GoofGame(nb_cards=3)
     history = GoofHistory()
     mean_node_regrets = dtoscrm(game,
-                              nb_iter=10000,
-                              threshold_constant=1,
-                              history=history)
+                                nb_iter=10000,
+                                threshold_constant=1.5,
+                                history=history)
     mean_node_regrets = mean_node_regrets[10:]
 
     for node in game.info_sets:

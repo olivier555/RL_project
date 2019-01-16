@@ -13,6 +13,7 @@ NB_MC_ITER = 4000
 EVAL_EVERY = 200
 N_ITER = 8000
 NB_CARDS = 3
+NB_THREAD = 8
 
 
 def os_train():
@@ -33,9 +34,9 @@ def dt_train(thresh=1.5):
 
 if __name__ == '__main__':
     print('Training OS')
-    os_trains = Parallel(n_jobs=2)(delayed(os_train)() for i in range(8))
+    os_trains = Parallel(n_jobs=NB_THREAD)(delayed(os_train)() for i in range(8))
     print('Training DT')
-    dt_trains = Parallel(n_jobs=2)(delayed(dt_train)() for i in range(8))
+    dt_trains = Parallel(n_jobs=NB_THREAD)(delayed(dt_train)() for i in range(8))
 
     # Plots values
     os_times = np.array([metrics['time'] for metrics in os_trains]).mean(axis=0)
@@ -56,7 +57,8 @@ if __name__ == '__main__':
     plt.ylabel('Estimated Value')
     plt.xlabel('Time')
     # plt.xlim((0, 0.36))
-    plt.show()
+    plt.savefig('goof_values.png')
+    # plt.show()
 
     # Plot Regret estimation
     fig, axes = plt.subplots(ncols=2, figsize=(10, 4))
@@ -71,7 +73,6 @@ if __name__ == '__main__':
     # plt.xscale('log')
     # plt.xlim((0, .55))
 
-
     plt.sca(axes[2])
     plot_traj(os_regrets[:, 2:, 0], os_times[2:], label='player 0')
     plot_traj(os_regrets[:, 2:, 1], os_times[2:], label='player 1')
@@ -81,7 +82,8 @@ if __name__ == '__main__':
     plt.xlabel('Time')
     # plt.xscale('log')
     # plt.xlim((0, .55))
-    plt.show()
+    plt.savefig('goof_regrets.png')
+    # plt.show()
 
 
     ###############

@@ -58,16 +58,6 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history, nb_mc_iter=4000,
         for n in my_game.info_sets[::-1]:
             if n.is_reachable():
                 if n.is_decision:
-
-                    # utility = None
-                    # sampled_action = None
-                    # for index_a, a in enumerate(n.actions):
-                    #     c = my_game.get_child(starting_node=n, action=a, history=history.history)
-                    #     if c.is_reachable():
-                    #         utility = c.value if c.player == n.player else -c.value
-                    #         sampled_action = index_a
-                    #         break
-
                     c = n.chance_child
                     sampled_action = n.idx_action_child
                     utility = c.value if c.player == n.player else -c.value
