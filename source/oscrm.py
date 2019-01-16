@@ -82,6 +82,8 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history, nb_mc_iter=4000,
 
                     n.sigma = strategy_update(n.regrets)
                     n.sigma_sum += (t - n.last_visit) * n.sigma * n.p_sum[n.player]
+                    if t - n.last_visit < 0:
+                        raise ValueError(t, n.last_visit, n.available_information)
 
                 elif n.is_chance:
                     n.player = n.chance_child.player
@@ -91,7 +93,7 @@ def oscrm_simulteneous(my_game: Game, nb_iter, history, nb_mc_iter=4000,
 
                 # if n.is_initial:
                 #     value_iter.append(n.value)
-                # n.last_visit = t
+                n.last_visit = t
 
         this_loop_time = time.time() - start - measure_time
         if t % eval_every == 0:
@@ -117,18 +119,22 @@ if __name__ == '__main__':
     # game = KuhnGame()
     # history = KuhnHistory()
 
-    game = GoofGame(nb_cards=4)
+    game = GoofGame(nb_cards=3)
     history = GoofHistory()
 
-    values = oscrm_simulteneous(game, nb_iter=1000, history=history, eval_every=100,
-                                nb_mc_iter=1,
+    values = oscrm_simulteneous(game, nb_iter=8000, history=history, eval_every=200,
+                                nb_mc_iter=1000,
                                 verbose=True)
 
-    times = values['time']
-    regrets = np.array(values['regrets'])
-    0
+    times = np.array(values['time'])[5:]
+    regrets = np.array(values['regrets'])[5:]
     plt.plot(times, regrets[:, 0])
     plt.plot(times, regrets[:, 1])
+    plt.show()
+
+    times = np.array(values['time'])[5:]
+    values_est = np.array(values['values'])[5:]
+    plt.plot(times, values_est)
     plt.show()
 
     for node in game.info_sets:

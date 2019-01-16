@@ -122,7 +122,8 @@ def dtcrm(my_game: Game, nb_iter, threshold_constant, history, nb_mc_iter=4000, 
     }
 
 
-def dtoscrm(my_game: Game, nb_iter, threshold_constant, history):
+def dtoscrm(my_game: Game, nb_iter, threshold_constant, history, eval_every=10,
+            nb_mc_iter=1000):
     """
     Pruning-based method based on:
     Brown, Noam, Christian Kroer, and Tuomas Sandholm.,
@@ -134,6 +135,10 @@ def dtoscrm(my_game: Game, nb_iter, threshold_constant, history):
     :return:
     """
     mean_node_regrets = []
+    value_iter = []
+    times = []
+    measure_time = 0.0
+    start = time.time()
 
     for t in range(nb_iter):
         # Forward pass
@@ -185,7 +190,22 @@ def dtoscrm(my_game: Game, nb_iter, threshold_constant, history):
         for n in my_game.info_sets:
             n.reset()
 
-    return np.array(mean_node_regrets)
+        this_loop_time = time.time() - start - measure_time
+        if t % eval_every == 0:
+            start_measure = time.time()
+            times.append(this_loop_time)
+            value_iter.append(value_eval(my_game, nb_mc_iter=nb_mc_iter, history=history))
+
+            regrets_norm = np.array(mean_regret(my_game))
+            regrets_norm = 1.0 / (t + 1) * regrets_norm
+            mean_node_regrets.append(regrets_norm)
+            measure_time += time.time() - start_measure
+
+    return {
+        'time': times,
+        'values': value_iter,
+        'regrets': mean_node_regrets
+    }
 
 
 if __name__ == '__main__':

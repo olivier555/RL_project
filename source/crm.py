@@ -88,12 +88,6 @@ class History:
             raise PermissionError
 
 
-# def utility(history, player, player1card, player2card):
-#
-#     #TODO: implement for Kuhn Poker
-#     return
-
-
 # We consider below more information sets that appear in reality
 all_info_sets = [{'card_info': card,
                   'active_player': player,

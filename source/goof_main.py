@@ -4,86 +4,62 @@ import matplotlib.pyplot as plt
 
 from fsicrm import fsicrm
 from oscrm import oscrm_simulteneous
-from dtcrm import dtcrm
+from dtcrm import dtcrm, dtoscrm
 
 from utils import plot_traj
-from kuhn_game import KuhnGame, KuhnHistory
+from goof_game import GoofGame, GoofHistory
 
-NB_MC_ITER = 500
-EVAL_EVERY = 50
-N_ITER = 1000
-
-
-def fs_train():
-    game = KuhnGame()
-    history = KuhnHistory()
-    metrics = fsicrm(game, N_ITER, history, nb_mc_iter=NB_MC_ITER,
-                     eval_every=EVAL_EVERY)
-    return metrics
+NB_MC_ITER = 4000
+EVAL_EVERY = 200
+N_ITER = 8000
+NB_CARDS = 3
 
 
 def os_train():
-    game = KuhnGame()
-    history = KuhnHistory()
-    metrics = oscrm_simulteneous(game, N_ITER*2, history, nb_mc_iter=NB_MC_ITER,
+    game = GoofGame(nb_cards=NB_CARDS)
+    history = GoofHistory()
+    metrics = oscrm_simulteneous(game, N_ITER, history, nb_mc_iter=NB_MC_ITER,
                                  eval_every=EVAL_EVERY)
     return metrics
 
 
 def dt_train(thresh=1.5):
-    game = KuhnGame()
-    history = KuhnHistory()
-    metrics = dtcrm(game, N_ITER, threshold_constant=thresh, history=history,
-                    nb_mc_iter=NB_MC_ITER, eval_every=EVAL_EVERY)
+    game = GoofGame(nb_cards=NB_CARDS)
+    history = GoofHistory()
+    metrics = dtoscrm(my_game=game, nb_iter=N_ITER, threshold_constant=thresh, history=history,
+                      eval_every=EVAL_EVERY, nb_mc_iter=NB_MC_ITER)
     return metrics
 
 
 if __name__ == '__main__':
-    print('Training FS')
-    fs_trains = Parallel(n_jobs=8)(delayed(fs_train)() for i in range(16))
     print('Training OS')
-    os_trains = Parallel(n_jobs=8)(delayed(os_train)() for i in range(16))
+    os_trains = Parallel(n_jobs=2)(delayed(os_train)() for i in range(8))
     print('Training DT')
-    dt_trains = Parallel(n_jobs=8)(delayed(dt_train)() for i in range(16))
+    dt_trains = Parallel(n_jobs=2)(delayed(dt_train)() for i in range(8))
 
     # Plots values
-    fs_times = np.array([metrics['time'] for metrics in fs_trains]).mean(axis=0)
     os_times = np.array([metrics['time'] for metrics in os_trains]).mean(axis=0)
     dt_times = np.array([metrics['time'] for metrics in dt_trains]).mean(axis=0)
 
-    fs_values = [metrics['values'] for metrics in fs_trains]
     os_values = [metrics['values'] for metrics in os_trains]
     dt_values = [metrics['values'] for metrics in dt_trains]
 
     # Averaging over all players
-    fs_regrets = np.array([metrics['regrets'] for metrics in fs_trains])
     os_regrets = np.array([metrics['regrets'] for metrics in os_trains])
     dt_regrets = np.array([metrics['regrets'] for metrics in dt_trains])
 
     # Plot value estimation
-    plot_traj(fs_values, fs_times, label='FSICRM')
     plot_traj(os_values, os_times, label='OSCRM')
-    plot_traj(dt_values, dt_times, label='DTCRM')
-    plt.title('Kuhn Poker')
+    plot_traj(dt_values, dt_times, label='DTOSCRM')
+    plt.title('Goofspiel with {} cards'.format(NB_CARDS))
     plt.legend()
     plt.ylabel('Estimated Value')
     plt.xlabel('Time')
-    # plt.axhline(y=0.0)
-    plt.xlim((0, 0.47))
+    # plt.xlim((0, 0.36))
     plt.show()
 
     # Plot Regret estimation
-    fig, axes = plt.subplots(ncols=3, figsize=(10, 4))
-
-    plt.sca(axes[0])
-    plot_traj(fs_regrets[:, :, 0], fs_times, label='player 0')
-    plot_traj(fs_regrets[:, :, 1], fs_times, label='player 1')
-    plt.title('FSICRM')
-    plt.legend()
-    plt.ylabel('Mean Node Regret')
-    plt.xlabel('Time')
-    # plt.xscale('log')
-    plt.xlim((0, .47))
+    fig, axes = plt.subplots(ncols=2, figsize=(10, 4))
 
     plt.sca(axes[1])
     plot_traj(dt_regrets[:,:,0], dt_times, label='player 0')
@@ -93,7 +69,7 @@ if __name__ == '__main__':
     plt.ylabel('Mean Node Regret')
     plt.xlabel('Time')
     # plt.xscale('log')
-    plt.xlim((0, .55))
+    # plt.xlim((0, .55))
 
 
     plt.sca(axes[2])
@@ -104,7 +80,7 @@ if __name__ == '__main__':
     plt.ylabel('Mean Node Regret')
     plt.xlabel('Time')
     # plt.xscale('log')
-    plt.xlim((0, .55))
+    # plt.xlim((0, .55))
     plt.show()
 
 
